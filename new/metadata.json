@@ -1,0 +1,5 @@
+{
+  "name": "System Login",
+  "description": "A responsive authentication interface with dark mode support, ported from a specific design.",
+  "requestFramePermissions": []
+}
