@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { login, register, logout, getStoredUser } from '../services/authService';
-import { AuthStatus, User } from '../types';
+import { login, register, logout, getStoredUser } from './authService';
+import { AuthStatus, User } from './types';
 
 export const LoginPage: React.FC = () => {
   const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
