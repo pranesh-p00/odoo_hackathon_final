@@ -157,13 +157,65 @@ export const login = async (email: string, password: string): Promise<AuthRespon
   return data;
 };
 
+// 3. REQUEST PASSWORD RESET (OTP)
+export const requestPasswordReset = async (email: string): Promise<{ message: string; otp?: string }> => {
+  const res = await fetch(`${API_BASE_URL}/api/request-password-reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to request OTP.");
+  }
+
+  return await res.json();
+};
+
+// 4. VERIFY OTP
+export const verifyOtp = async (email: string, otp: string): Promise<{ verified: boolean; message: string }> => {
+  const res = await fetch(`${API_BASE_URL}/api/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "OTP verification failed.");
+  }
+
+  return await res.json();
+};
+
+// 5. RESET PASSWORD
+export const resetPassword = async (
+  email: string,
+  otp: string,
+  newPassword: string
+): Promise<{ message: string }> => {
+  const res = await fetch(`${API_BASE_URL}/api/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp, newPassword })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Password reset failed.");
+  }
+
+  return await res.json();
+};
+
 // 3. LOGOUT
 export const logout = () => {
   localStorage.removeItem(STORAGE_TOKEN_KEY);
   localStorage.removeItem(STORAGE_USER_SESSION);
 };
 
-// 4. CHECK AUTH
+// 6. CHECK AUTH
 export const getStoredUser = (): User | null => {
   const userRaw = localStorage.getItem(STORAGE_USER_SESSION);
   if (!userRaw) return null;

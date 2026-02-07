@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { login, register, logout, getStoredUser } from './authService';
+import { login, register, logout, getStoredUser, requestPasswordReset, verifyOtp, resetPassword } from './authService';
 import { AuthStatus, User } from './types';
 
 export const LoginPage: React.FC = () => {
-  const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [mode, setMode] = useState<'LOGIN' | 'REGISTER' | 'FORGOT'>('LOGIN');
   
   // Form State
   const [name, setName] = useState('');
@@ -17,6 +17,12 @@ export const LoginPage: React.FC = () => {
   const [status, setStatus] = useState<AuthStatus>(AuthStatus.IDLE);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -35,15 +41,22 @@ export const LoginPage: React.FC = () => {
     setRole('user');
     setErrorMessage(null);
     setStatus(AuthStatus.IDLE);
+    setResetEmail('');
+    setResetOtp('');
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    setResetStep(1);
+    setResetMessage(null);
   };
 
-  const handleModeSwitch = (newMode: 'LOGIN' | 'REGISTER') => {
+  const handleModeSwitch = (newMode: 'LOGIN' | 'REGISTER' | 'FORGOT') => {
     setMode(newMode);
     resetForm();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === 'FORGOT') return;
     setStatus(AuthStatus.LOADING);
     setErrorMessage(null);
 
@@ -71,6 +84,55 @@ export const LoginPage: React.FC = () => {
     setCurrentUser(null);
     setStatus(AuthStatus.IDLE);
     setMode('LOGIN');
+  };
+
+  const handleRequestOtp = async () => {
+    setStatus(AuthStatus.LOADING);
+    setErrorMessage(null);
+    setResetMessage(null);
+    try {
+      const response = await requestPasswordReset(resetEmail);
+      setResetMessage(response.message + (response.otp ? ` OTP: ${response.otp}` : ''));
+      setResetStep(2);
+      setStatus(AuthStatus.IDLE);
+    } catch (err: any) {
+      setStatus(AuthStatus.ERROR);
+      setErrorMessage(err.message || "Failed to request OTP");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setStatus(AuthStatus.LOADING);
+    setErrorMessage(null);
+    try {
+      await verifyOtp(resetEmail, resetOtp);
+      setResetStep(3);
+      setStatus(AuthStatus.IDLE);
+    } catch (err: any) {
+      setStatus(AuthStatus.ERROR);
+      setErrorMessage(err.message || "OTP verification failed");
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setStatus(AuthStatus.LOADING);
+    setErrorMessage(null);
+    if (resetNewPassword !== resetConfirmPassword) {
+      setStatus(AuthStatus.ERROR);
+      setErrorMessage("Passwords do not match");
+      return;
+    }
+    try {
+      const response = await resetPassword(resetEmail, resetOtp, resetNewPassword);
+      setResetMessage(response.message);
+      setStatus(AuthStatus.SUCCESS);
+      setMode('LOGIN');
+      setEmail(resetEmail);
+      setPassword('');
+    } catch (err: any) {
+      setStatus(AuthStatus.ERROR);
+      setErrorMessage(err.message || "Password reset failed");
+    }
   };
 
   // --- DASHBOARD VIEW (Protected) ---
@@ -228,6 +290,117 @@ export const LoginPage: React.FC = () => {
               </div>
             )}
 
+            {resetMessage && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                {resetMessage}
+              </div>
+            )}
+
+            {mode === 'FORGOT' ? (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[#111813] dark:text-[#e0e7e1] text-sm font-semibold" htmlFor="resetEmail">Email Address</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#61896b] flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-[20px]">mail</span>
+                    </span>
+                    <input
+                      id="resetEmail"
+                      name="resetEmail"
+                      type="email"
+                      required
+                      placeholder="name@company.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="form-input w-full rounded-lg border border-[#dbe6de] dark:border-[#3a5840] bg-white dark:bg-[#15251a] text-[#111813] dark:text-white pl-11 pr-4 py-3 focus:border-primary focus:ring-primary dark:focus:border-primary dark:focus:ring-primary placeholder-[#61896b]/60 dark:placeholder-[#61896b]"
+                    />
+                  </div>
+                </div>
+
+                {resetStep >= 2 && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#111813] dark:text-[#e0e7e1] text-sm font-semibold" htmlFor="resetOtp">OTP</label>
+                    <input
+                      id="resetOtp"
+                      name="resetOtp"
+                      type="text"
+                      required
+                      placeholder="6-digit OTP"
+                      value={resetOtp}
+                      onChange={(e) => setResetOtp(e.target.value)}
+                      className="form-input w-full rounded-lg border border-[#dbe6de] dark:border-[#3a5840] bg-white dark:bg-[#15251a] text-[#111813] dark:text-white px-4 py-3 focus:border-primary focus:ring-primary dark:focus:border-primary dark:focus:ring-primary placeholder-[#61896b]/60 dark:placeholder-[#61896b]"
+                    />
+                  </div>
+                )}
+
+                {resetStep >= 3 && (
+                  <>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[#111813] dark:text-[#e0e7e1] text-sm font-semibold" htmlFor="resetNewPassword">New Password</label>
+                      <input
+                        id="resetNewPassword"
+                        name="resetNewPassword"
+                        type="password"
+                        required
+                        minLength={6}
+                        placeholder="••••••••"
+                        value={resetNewPassword}
+                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        className="form-input w-full rounded-lg border border-[#dbe6de] dark:border-[#3a5840] bg-white dark:bg-[#15251a] text-[#111813] dark:text-white px-4 py-3 focus:border-primary focus:ring-primary dark:focus:border-primary dark:focus:ring-primary placeholder-[#61896b]/60 dark:placeholder-[#61896b]"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[#111813] dark:text-[#e0e7e1] text-sm font-semibold" htmlFor="resetConfirmPassword">Confirm New Password</label>
+                      <input
+                        id="resetConfirmPassword"
+                        name="resetConfirmPassword"
+                        type="password"
+                        required
+                        minLength={6}
+                        placeholder="••••••••"
+                        value={resetConfirmPassword}
+                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                        className="form-input w-full rounded-lg border border-[#dbe6de] dark:border-[#3a5840] bg-white dark:bg-[#15251a] text-[#111813] dark:text-white px-4 py-3 focus:border-primary focus:ring-primary dark:focus:border-primary dark:focus:ring-primary placeholder-[#61896b]/60 dark:placeholder-[#61896b]"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {resetStep === 1 && (
+                  <button
+                    type="button"
+                    onClick={handleRequestOtp}
+                    disabled={status === AuthStatus.LOADING || !resetEmail}
+                    className={`mt-2 w-full font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${status === AuthStatus.LOADING ? 'opacity-80 cursor-not-allowed' : ''} bg-primary hover:bg-primary-dark text-[#111813]`}
+                  >
+                    {status === AuthStatus.LOADING ? 'Sending OTP...' : 'Send OTP'}
+                  </button>
+                )}
+
+                {resetStep === 2 && (
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={status === AuthStatus.LOADING || !resetOtp}
+                    className={`mt-2 w-full font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${status === AuthStatus.LOADING ? 'opacity-80 cursor-not-allowed' : ''} bg-primary hover:bg-primary-dark text-[#111813]`}
+                  >
+                    {status === AuthStatus.LOADING ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                )}
+
+                {resetStep === 3 && (
+                  <button
+                    type="button"
+                    onClick={handleResetPassword}
+                    disabled={status === AuthStatus.LOADING}
+                    className={`mt-2 w-full font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${status === AuthStatus.LOADING ? 'opacity-80 cursor-not-allowed' : ''} bg-primary hover:bg-primary-dark text-[#111813]`}
+                  >
+                    {status === AuthStatus.LOADING ? 'Updating...' : 'Change Password'}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
             {/* Name Field (Register Only) */}
             {mode === 'REGISTER' && (
               <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -300,7 +473,13 @@ export const LoginPage: React.FC = () => {
               <div className="flex justify-between items-center">
                 <label className="text-[#111813] dark:text-[#e0e7e1] text-sm font-semibold" htmlFor="password">Password</label>
                 {mode === 'LOGIN' && (
-                  <a href="#" className="text-[#61896b] hover:text-primary dark:text-[#a0cfa5] dark:hover:text-primary text-xs font-medium transition-colors">Forgot password?</a>
+                  <button
+                    type="button"
+                    onClick={() => handleModeSwitch('FORGOT')}
+                    className="text-[#61896b] hover:text-primary dark:text-[#a0cfa5] dark:hover:text-primary text-xs font-medium transition-colors"
+                  >
+                    Forgot password?
+                  </button>
                 )}
               </div>
               <div className="relative group">
@@ -367,12 +546,14 @@ export const LoginPage: React.FC = () => {
                 </>
               )}
             </button>
+              </>
+            )}
           </form>
 
           {/* Footer / Secondary Actions */}
           <div className="pt-2 flex flex-col items-center gap-4 border-t border-[#f0f4f1] dark:border-[#2a4531]">
             <p className="text-sm text-[#61896b] dark:text-[#8ab895]">
-              {mode === 'LOGIN' ? "Don't have an account?" : "Already have an account?"}{" "}
+              {mode === 'LOGIN' ? "Don't have an account?" : mode === 'REGISTER' ? "Already have an account?" : "Back to login?"}{" "}
               <button 
                 onClick={() => handleModeSwitch(mode === 'LOGIN' ? 'REGISTER' : 'LOGIN')}
                 className="text-[#111813] dark:text-white font-semibold hover:text-primary dark:hover:text-primary hover:underline transition-colors focus:outline-none"
