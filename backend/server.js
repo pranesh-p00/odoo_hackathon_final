@@ -27,7 +27,7 @@ app.post('/api/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashed = await bcrypt.hash(password, salt);
 
-        const validRole = role === 'admin' ? 'admin' : 'user';
+        const validRole = role === 'admin' || role === 'internal_staff' ? role : 'user';
         const [result] = await db.query('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)', 
             [name, email, hashed, validRole]);
 

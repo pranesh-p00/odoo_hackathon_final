@@ -10,7 +10,7 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'user' | 'admin'>('user');
+  const [role, setRole] = useState<'user' | 'admin' | 'internal_staff'>('user');
   
   // UI State
   const [showPassword, setShowPassword] = useState(false);
@@ -138,29 +138,55 @@ export const LoginPage: React.FC = () => {
   // --- DASHBOARD VIEW (Protected) ---
   if (currentUser && status === AuthStatus.SUCCESS) {
     const isAdmin = currentUser.role === 'admin';
+    const isInternalStaff = currentUser.role === 'internal_staff';
+    const roleLabel = isInternalStaff ? 'Internal Staff' : currentUser.role;
     
     return (
       <div className="flex items-center justify-center min-h-screen p-4 bg-background-light dark:bg-background-dark relative overflow-hidden">
          <div className="absolute inset-0 bg-grid-pattern dark:bg-grid-pattern-dark pointer-events-none z-0"></div>
          
-         <div className={`w-full max-w-2xl ${isAdmin ? 'bg-slate-900 border-slate-700' : 'bg-white dark:bg-[#1a2e1f] border-[#dbe6de] dark:border-[#2a4531]'} rounded-xl shadow-2xl relative z-10 border overflow-hidden transition-colors duration-500`}>
+         <div className={`w-full max-w-2xl ${
+           isAdmin 
+             ? 'bg-slate-900 border-slate-700' 
+             : isInternalStaff 
+               ? 'bg-white dark:bg-[#112a2a] border-[#dbe6de] dark:border-[#1f3a3a]'
+               : 'bg-white dark:bg-[#1a2e1f] border-[#dbe6de] dark:border-[#2a4531]'
+         } rounded-xl shadow-2xl relative z-10 border overflow-hidden transition-colors duration-500`}>
             
             {/* Dashboard Header */}
-            <div className={`h-2 w-full ${isAdmin ? 'bg-purple-500' : 'bg-primary'}`}></div>
+            <div className={`h-2 w-full ${isAdmin ? 'bg-purple-500' : isInternalStaff ? 'bg-teal-500' : 'bg-primary'}`}></div>
             
             <div className="flex flex-col md:flex-row">
               {/* Sidebar / Info Panel */}
-              <div className={`p-8 md:w-1/3 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r ${isAdmin ? 'border-slate-700 bg-slate-800/50' : 'border-[#f0f4f1] dark:border-[#2a4531] bg-gray-50 dark:bg-[#15251a]'}`}>
-                 <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 ${isAdmin ? 'bg-purple-500/20 text-purple-400' : 'bg-primary/10 text-primary'}`}>
+              <div className={`p-8 md:w-1/3 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r ${
+                isAdmin 
+                  ? 'border-slate-700 bg-slate-800/50' 
+                  : isInternalStaff 
+                    ? 'border-[#e6f0ee] dark:border-[#1f3a3a] bg-teal-50/40 dark:bg-[#0f2020]'
+                    : 'border-[#f0f4f1] dark:border-[#2a4531] bg-gray-50 dark:bg-[#15251a]'
+              }`}>
+                 <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 ${
+                   isAdmin 
+                     ? 'bg-purple-500/20 text-purple-400' 
+                     : isInternalStaff 
+                       ? 'bg-teal-500/15 text-teal-600 dark:text-teal-400'
+                       : 'bg-primary/10 text-primary'
+                 }`}>
                     <span className="material-symbols-outlined text-5xl">
-                      {isAdmin ? 'admin_panel_settings' : 'account_circle'}
+                      {isAdmin ? 'admin_panel_settings' : isInternalStaff ? 'badge' : 'account_circle'}
                     </span>
                  </div>
                  <h2 className={`text-xl font-bold mb-1 ${isAdmin ? 'text-white' : 'text-[#111813] dark:text-white'}`}>
                    {currentUser.name}
                  </h2>
-                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6 ${isAdmin ? 'bg-purple-500/20 text-purple-300' : 'bg-primary/20 text-primary-dark dark:text-primary'}`}>
-                   {currentUser.role}
+                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6 ${
+                   isAdmin 
+                     ? 'bg-purple-500/20 text-purple-300' 
+                     : isInternalStaff 
+                       ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300'
+                       : 'bg-primary/20 text-primary-dark dark:text-primary'
+                 }`}>
+                   {roleLabel}
                  </span>
                  
                  <button 
@@ -180,44 +206,58 @@ export const LoginPage: React.FC = () => {
               <div className="p-8 md:w-2/3">
                  <div className="mb-6">
                     <h3 className={`text-2xl font-bold mb-2 ${isAdmin ? 'text-white' : 'text-[#111813] dark:text-white'}`}>
-                      {isAdmin ? 'System Overview' : 'My Dashboard'}
+                      {isAdmin ? 'System Overview' : isInternalStaff ? 'Staff Dashboard' : 'My Dashboard'}
                     </h3>
-                    <p className={`text-sm ${isAdmin ? 'text-slate-400' : 'text-[#61896b] dark:text-[#a0cfa5]'}`}>
+                    <p className={`text-sm ${isAdmin ? 'text-slate-400' : isInternalStaff ? 'text-teal-700/80 dark:text-teal-300/80' : 'text-[#61896b] dark:text-[#a0cfa5]'}`}>
                       {isAdmin 
                         ? 'You have full access to system settings and user management.' 
-                        : 'Manage your personal settings and view your activity logs.'}
+                        : isInternalStaff
+                          ? 'Access internal tools, support queues, and operational updates.'
+                          : 'Manage your personal settings and view your activity logs.'}
                     </p>
                  </div>
 
                  {/* Mock Content Blocks */}
                  <div className="grid grid-cols-1 gap-4">
                     {/* Block 1 */}
-                    <div className={`p-4 rounded-lg border ${isAdmin ? 'bg-slate-800 border-slate-700' : 'bg-background-light dark:bg-background-dark border-[#dbe6de] dark:border-[#2a4531]'}`}>
+                    <div className={`p-4 rounded-lg border ${
+                      isAdmin 
+                        ? 'bg-slate-800 border-slate-700' 
+                        : isInternalStaff
+                          ? 'bg-white/70 dark:bg-[#0f2020] border-[#d7ece7] dark:border-[#1f3a3a]'
+                          : 'bg-background-light dark:bg-background-dark border-[#dbe6de] dark:border-[#2a4531]'
+                    }`}>
                        <div className="flex items-center gap-3 mb-2">
-                          <span className={`material-symbols-outlined ${isAdmin ? 'text-blue-400' : 'text-primary'}`}>
-                            {isAdmin ? 'group' : 'notifications'}
+                          <span className={`material-symbols-outlined ${isAdmin ? 'text-blue-400' : isInternalStaff ? 'text-teal-600 dark:text-teal-400' : 'text-primary'}`}>
+                            {isAdmin ? 'group' : isInternalStaff ? 'support_agent' : 'notifications'}
                           </span>
                           <h4 className={`font-bold ${isAdmin ? 'text-slate-200' : 'text-[#111813] dark:text-white'}`}>
-                             {isAdmin ? 'User Management' : 'Recent Notifications'}
+                             {isAdmin ? 'User Management' : isInternalStaff ? 'Staff Queue' : 'Recent Notifications'}
                           </h4>
                        </div>
-                       <p className={`text-sm ${isAdmin ? 'text-slate-400' : 'text-[#61896b] dark:text-[#8ab895]'}`}>
-                          {isAdmin ? '342 Active Users registered this week.' : 'You have no unread notifications at this time.'}
+                       <p className={`text-sm ${isAdmin ? 'text-slate-400' : isInternalStaff ? 'text-teal-700/80 dark:text-teal-300/80' : 'text-[#61896b] dark:text-[#8ab895]'}`}>
+                          {isAdmin ? '342 Active Users registered this week.' : isInternalStaff ? '5 tickets waiting for review in your queue.' : 'You have no unread notifications at this time.'}
                        </p>
                     </div>
 
                     {/* Block 2 */}
-                    <div className={`p-4 rounded-lg border ${isAdmin ? 'bg-slate-800 border-slate-700' : 'bg-background-light dark:bg-background-dark border-[#dbe6de] dark:border-[#2a4531]'}`}>
+                    <div className={`p-4 rounded-lg border ${
+                      isAdmin 
+                        ? 'bg-slate-800 border-slate-700' 
+                        : isInternalStaff
+                          ? 'bg-white/70 dark:bg-[#0f2020] border-[#d7ece7] dark:border-[#1f3a3a]'
+                          : 'bg-background-light dark:bg-background-dark border-[#dbe6de] dark:border-[#2a4531]'
+                    }`}>
                        <div className="flex items-center gap-3 mb-2">
-                          <span className={`material-symbols-outlined ${isAdmin ? 'text-yellow-400' : 'text-primary'}`}>
-                            {isAdmin ? 'database' : 'history'}
+                          <span className={`material-symbols-outlined ${isAdmin ? 'text-yellow-400' : isInternalStaff ? 'text-teal-600 dark:text-teal-400' : 'text-primary'}`}>
+                            {isAdmin ? 'database' : isInternalStaff ? 'badge' : 'history'}
                           </span>
                           <h4 className={`font-bold ${isAdmin ? 'text-slate-200' : 'text-[#111813] dark:text-white'}`}>
-                             {isAdmin ? 'System Database' : 'Login History'}
+                             {isAdmin ? 'System Database' : isInternalStaff ? 'Shift Summary' : 'Login History'}
                           </h4>
                        </div>
-                       <p className={`text-sm ${isAdmin ? 'text-slate-400' : 'text-[#61896b] dark:text-[#8ab895]'}`}>
-                          {isAdmin ? 'Database running optimal at 12ms latency.' : 'Last login: Just now from Chrome on Windows.'}
+                       <p className={`text-sm ${isAdmin ? 'text-slate-400' : isInternalStaff ? 'text-teal-700/80 dark:text-teal-300/80' : 'text-[#61896b] dark:text-[#8ab895]'}`}>
+                          {isAdmin ? 'Database running optimal at 12ms latency.' : isInternalStaff ? 'On duty: 3 hours. SLA compliance is green.' : 'Last login: Just now from Chrome on Windows.'}
                        </p>
                     </div>
                     
@@ -427,7 +467,7 @@ export const LoginPage: React.FC = () => {
             {mode === 'REGISTER' && (
               <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
                 <label className="text-[#111813] dark:text-[#e0e7e1] text-sm font-semibold">Account Type</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setRole('user')}
@@ -443,6 +483,14 @@ export const LoginPage: React.FC = () => {
                   >
                     <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
                     Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('internal_staff')}
+                    className={`flex items-center justify-center gap-2 py-3 rounded-lg border transition-all ${role === 'internal_staff' ? 'bg-teal-500/10 border-teal-500 text-teal-700 dark:text-teal-300 font-bold' : 'bg-white dark:bg-[#15251a] border-[#dbe6de] dark:border-[#3a5840] text-[#61896b]'}`}
+                  >
+                    <span className="material-symbols-outlined text-lg">badge</span>
+                    Staff
                   </button>
                 </div>
               </div>
@@ -535,13 +583,21 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={status === AuthStatus.LOADING}
-              className={`mt-2 w-full font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group ${status === AuthStatus.LOADING ? 'opacity-80 cursor-not-allowed' : ''} ${mode === 'REGISTER' && role === 'admin' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-primary hover:bg-primary-dark text-[#111813]'}`}
+              className={`mt-2 w-full font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group ${
+                status === AuthStatus.LOADING ? 'opacity-80 cursor-not-allowed' : ''
+              } ${
+                mode === 'REGISTER' && role === 'admin'
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                  : mode === 'REGISTER' && role === 'internal_staff'
+                    ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                    : 'bg-primary hover:bg-primary-dark text-[#111813]'
+              }`}
             >
               {status === AuthStatus.LOADING ? (
                  <span className="material-symbols-outlined animate-spin">progress_activity</span>
               ) : (
                 <>
-                  <span>{mode === 'LOGIN' ? 'Sign In' : (role === 'admin' ? 'Create Admin Account' : 'Create User Account')}</span>
+                  <span>{mode === 'LOGIN' ? 'Sign In' : (role === 'admin' ? 'Create Admin Account' : role === 'internal_staff' ? 'Create Staff Account' : 'Create User Account')}</span>
                   <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </>
               )}

@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'internal_staff';
 }
 
 export interface AuthResponse {
@@ -24,6 +24,6 @@ export enum AuthStatus {
 export interface JwtPayload {
   id: string;
   email: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'internal_staff';
   exp: number;
 }

@@ -64,7 +64,7 @@ import { AuthResponse, User } from "../types";
       // 2. Hash password
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(password, salt);
-      const validRole = role === 'admin' ? 'admin' : 'user';
+      const validRole = role === 'admin' || role === 'internal_staff' ? role : 'user';
 
       // 3. Insert into DB
       const [result] = await db.execute(
@@ -119,7 +119,7 @@ export const register = async (
   name: string,
   email: string,
   password: string,
-  role: 'user' | 'admin' = 'user'
+  role: 'user' | 'admin' | 'internal_staff' = 'user'
 ): Promise<AuthResponse> => {
   const res = await fetch(`${API_BASE_URL}/api/register`, {
     method: "POST",
